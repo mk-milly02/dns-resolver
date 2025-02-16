@@ -7,17 +7,17 @@ import (
 )
 
 /*
-	+---------------------+
-	|        Header       |
-	+---------------------+
-	|       Question      | the question for the name server
-	+---------------------+
-	|        Answer       | RRs answering the question
-	+---------------------+
-	|      Authority      | RRs pointing toward an authority
-	+---------------------+
-	|      Additional     | RRs holding additional information
-	+---------------------+
++---------------------+
+|        Header       |
++---------------------+
+|       Question      | the question for the name server
++---------------------+
+|        Answer       | RRs answering the question
++---------------------+
+|      Authority      | RRs pointing toward an authority
++---------------------+
+|      Additional     | RRs holding additional information
++---------------------+
 */
 type Message struct {
 	Header     [6]uint16
@@ -60,8 +60,8 @@ func EncodeURL(name string) string {
 	return encoded
 }
 
-func (m Message) ConvertToHexString() string {
-	return HexStringFromUInt16(m.Header[:]) + hex.EncodeToString([]byte(m.Question.Name)) + 
-	HexStringFromUInt16([]uint16{m.Question.RecordType, uint16(m.Question.Class)}) +
-	HexStringFromUInt16(m.Answer[:]) + HexStringFromUInt16(m.Authority[:]) + HexStringFromUInt16(m.Additional[:])
+func (m Message) BuildQuery() string {
+	return HexStringFromUInt16(m.Header[:]) + hex.EncodeToString([]byte(m.Question.Name)) +
+		HexStringFromUInt16([]uint16{m.Question.RecordType, uint16(m.Question.Class)}) +
+		HexStringFromUInt16(m.Answer[:]) + HexStringFromUInt16(m.Authority[:]) + HexStringFromUInt16(m.Additional[:])
 }
