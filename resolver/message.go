@@ -7,17 +7,17 @@ import (
 )
 
 /*
-		+---------------------+
-	    |        Header       |
-	    +---------------------+
-	    |       Question      | the question for the name server
-	    +---------------------+
-	    |        Answer       | RRs answering the question
-	    +---------------------+
-	    |      Authority      | RRs pointing toward an authority
-	    +---------------------+
-	    |      Additional     | RRs holding additional information
-	    +---------------------+
+	+---------------------+
+	|        Header       |
+	+---------------------+
+	|       Question      | the question for the name server
+	+---------------------+
+	|        Answer       | RRs answering the question
+	+---------------------+
+	|      Authority      | RRs pointing toward an authority
+	+---------------------+
+	|      Additional     | RRs holding additional information
+	+---------------------+
 */
 type Message struct {
 	Header     [6]uint16
@@ -35,8 +35,8 @@ type QMessage struct {
 
 func NewMessage() Message {
 	return Message{
-		Header:     [6]uint16{0x16, 0x80, 0x01, 0x00, 0x00, 0x00},
-		Question:   QMessage{transform_domain_name("dns.google.com"), 0x01, 0x01},
+		Header:     [6]uint16{0x16, 0x100, 0x01, 0x00, 0x00, 0x00},
+		Question:   QMessage{EncodeURL("dns.google.com"), 0x01, 0x01},
 		Answer:     [6]uint16{0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
 		Authority:  [6]uint16{0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
 		Additional: [6]uint16{0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
@@ -50,7 +50,7 @@ func HexStringFromUInt16(arr []uint16) (result string) {
 	return
 }
 
-func transform_domain_name(name string) string {
+func EncodeURL(name string) string {
 	var encoded string
 	labels := strings.Split(name, ".")
 	for _, l := range labels {
