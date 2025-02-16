@@ -6,32 +6,40 @@ import (
 	"strings"
 )
 
-/*
-+---------------------+
-|        Header       |
-+---------------------+
-|       Question      | the question for the name server
-+---------------------+
-|        Answer       | RRs answering the question
-+---------------------+
-|      Authority      | RRs pointing toward an authority
-+---------------------+
-|      Additional     | RRs holding additional information
-+---------------------+
-*/
+// Message represents a DNS message
 type Message struct {
-	Header     [6]uint16
-	Question   QMessage
+	Header     header
+	Question   question
 	Answer     [6]uint16
 	Authority  [6]uint16
 	Additional [6]uint16
 }
 
-// QMessage represents a DNS question section
-type QMessage struct {
-	Name       string
-	RecordType uint16
-	Class      uint
+// Header represents the DNS message header
+type header struct {
+	id              uint16
+	flags           uint16
+	queryCount      uint16
+	answerCount     uint16
+	authorityCount  uint16
+	additionalCount uint16
+}
+
+// String returns the string representation of the header
+func (h header) String() string {
+	return fmt.Sprintf("%04x%04x%04x%04x%04x%04x", h.id, h.flags, h.queryCount, h.answerCount, h.authorityCount, h.additionalCount)
+}
+
+// Question represents a DNS question section
+type question struct {
+	name       string
+	recordType uint16
+	class      uint16
+}
+
+// String returns the string representation of the question
+func (q question) String() string {
+	return fmt.Sprintf("%s%04x%04x", q.name, q.recordType, q.class)
 }
 
 // NewMessage creates a new DNS message with default values
@@ -39,20 +47,13 @@ type QMessage struct {
 // and empty answer, authority, and additional sections.
 func NewMessage() Message {
 	return Message{
-		Header:     [6]uint16{0x16, 0x100, 0x01, 0x00, 0x00, 0x00},
-		Question:   QMessage{EncodeURL("dns.google.com"), 0x01, 0x01},
-		Answer:     [6]uint16{0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
-		Authority:  [6]uint16{0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
-		Additional: [6]uint16{0x00, 0x00, 0x00, 0x00, 0x00, 0x00},
+		Header: header{
+			id:         0x16,
+			flags:      0x100,
+			queryCount: 0x01,
+		},
+		Question: question{EncodeURL("dns.google.com"), 0x01, 0x01},
 	}
-}
-
-// HexStringFromUInt16 converts an array of uint16 to a hex string
-func HexStringFromUInt16(arr []uint16) (result string) {
-	for i := 0; i < len(arr); i++ {
-		result += fmt.Sprintf("%04x", arr[i])
-	}
-	return
 }
 
 // EncodeURL encodes a domain name into the DNS format
@@ -67,7 +68,12 @@ func EncodeURL(name string) string {
 	return encoded
 }
 
+// BuildQuery builds the DNS query from the message
 func (m Message) BuildQuery() string {
-	return HexStringFromUInt16(m.Header[:]) + m.Question.Name + HexStringFromUInt16([]uint16{m.Question.RecordType, uint16(m.Question.Class)}) +
-		HexStringFromUInt16(m.Answer[:]) + HexStringFromUInt16(m.Authority[:]) + HexStringFromUInt16(m.Additional[:])
+	return m.Header.String() + m.Question.String()
+}
+
+// ValidateResponse validates the response from the name server
+func (m Message) ValidateResponse(response []byte) bool {
+	return hex.EncodeToString(response[:2]) == fmt.Sprintf("%04x", m.Header.id)
 }

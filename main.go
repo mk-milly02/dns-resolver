@@ -2,13 +2,23 @@ package main
 
 import (
 	"dns-resolver/resolver"
+	"encoding/hex"
 	"fmt"
+	"log"
 )
 
 func main() {
 	default_message := resolver.NewMessage()
-	fmt.Println(default_message.BuildQuery())
+	query := default_message.BuildQuery()
+	fmt.Println("Query:", query)
+	hex_query, err := hex.DecodeString(query)
+	if err != nil {
+		log.Fatal(err)
+	}
+	response, err := resolver.SendRequest(hex_query)
+	if err != nil {
+		log.Fatal(err)
+	}
+	resolver.DumpResponse(response)
+	fmt.Println("Response Validity:", default_message.ValidateResponse(response))
 }
-
-//0016 0100 0001 0000 0000 0000 03646e7306676f6f676c6503636f6d00 0001 0001
-//0016 0100 0001 0000 0000 0000 03646e7306676f6f676c6503636f6d00 0001 0001 000000000000000000000000000000000000000000000000000000000000000000000000
