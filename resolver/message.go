@@ -54,14 +54,14 @@ func EncodeURL(name string) string {
 	var encoded string
 	labels := strings.Split(name, ".")
 	for _, l := range labels {
-		encoded += fmt.Sprint(len(l), l)
+		encoded += fmt.Sprintf("%02x", len(l))
+		encoded += hex.EncodeToString([]byte(l))
 	}
-	encoded += "0"
+	encoded += fmt.Sprintf("%02x", 0)
 	return encoded
 }
 
 func (m Message) BuildQuery() string {
-	return HexStringFromUInt16(m.Header[:]) + hex.EncodeToString([]byte(m.Question.Name)) +
-		HexStringFromUInt16([]uint16{m.Question.RecordType, uint16(m.Question.Class)}) +
+	return HexStringFromUInt16(m.Header[:]) + m.Question.Name + HexStringFromUInt16([]uint16{m.Question.RecordType, uint16(m.Question.Class)}) +
 		HexStringFromUInt16(m.Answer[:]) + HexStringFromUInt16(m.Authority[:]) + HexStringFromUInt16(m.Additional[:])
 }
