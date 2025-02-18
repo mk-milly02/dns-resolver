@@ -32,7 +32,7 @@ func TestEncodeURL(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := EncodeURL(tt.args.name); got != tt.want {
+			if got := encodeURL(tt.args.name); got != tt.want {
 				t.Errorf("EncodeURL() = %v, want %v", got, tt.want)
 			}
 		})
