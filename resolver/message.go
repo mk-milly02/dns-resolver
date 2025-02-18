@@ -153,3 +153,7 @@ func ParseResponse(response []byte, req Message) (m Message) {
 	}
 	return m
 }
+
+func (m Message) IsAResponse() bool {
+	return m.Header.flags&0x8000 == 0x8000
+}
