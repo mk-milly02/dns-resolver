@@ -4,6 +4,7 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"fmt"
+	"net/netip"
 	"strings"
 )
 
@@ -82,6 +83,8 @@ func encodeURL(name string) string {
 // decodeURL decodes a domain name from the DNS format
 func decodeURL(encoded string) string {
 	var decoded string
+	encoded_bytes, _ := hex.DecodeString(encoded)
+	encoded = string(encoded_bytes)
 	for i := 0; i < len(encoded); i++ {
 		length := encoded[i]
 		if length == '0' {
@@ -89,7 +92,7 @@ func decodeURL(encoded string) string {
 		}
 		decoded += encoded[i+1 : i+1+int(length)]
 		i += int(length)
-		if i+1 < len(encoded) {
+		if i+2 < len(encoded) {
 			decoded += "."
 		}
 	}
@@ -106,9 +109,9 @@ func (m Message) ValidateResponse(response []byte) bool {
 	return hex.EncodeToString(response[:2]) == fmt.Sprintf("%04x", m.Header.id)
 }
 
-// newHeader creates a new header from the byte slice
+// parseHeader creates a new header from the byte slice
 // The header is 12 bytes long
-func newHeader(b []byte) header {
+func parseHeader(b []byte) header {
 	return header{
 		id:              binary.BigEndian.Uint16(b[:2]),
 		flags:           binary.BigEndian.Uint16(b[2:4]),
@@ -119,41 +122,59 @@ func newHeader(b []byte) header {
 	}
 }
 
-// newQuestion creates a new question from the byte slice
-//
-// The question is variable length
-func newQuestion(b []byte, offset int) (question, int) {
-	return question{
-		name:       decodeURL(string(b[:offset])),
-		recordType: binary.BigEndian.Uint16(b[offset : offset+2]),
-		class:      binary.BigEndian.Uint16(b[offset+2 : offset+4]),
-	}, offset + 4
-}
-
-// newResourceRecord creates a new resource record from the byte slice
-func newResourceRecord(b []byte, domainName string, offset int) (rr resourceRecord, nextOffset int) {
-	rr.name = domainName
+// parseResourceRecord creates a new resource record from the byte slice
+func parseResourceRecord(b []byte, domainName string, offset int) (rr resourceRecord, newOffset int) {
+	if hex.EncodeToString(b[offset:offset+1]) == "c0" {
+		offset += 2
+		rr.name = domainName
+	}
 	rr.recordType = binary.BigEndian.Uint16(b[offset : offset+2])
-	rr.class = binary.BigEndian.Uint16(b[offset+2 : offset+4])
-	rr.ttl = binary.BigEndian.Uint32(b[offset+4 : offset+8])
-	rr.dataLength = binary.BigEndian.Uint16(b[offset+8 : offset+10])
-	rr.data = string(b[offset+10 : offset+10+int(rr.dataLength)])
-	return rr, offset + 10 + int(rr.dataLength)
+	offset += 2
+	rr.class = binary.BigEndian.Uint16(b[offset : offset+2])
+	offset += 2
+	rr.ttl = binary.BigEndian.Uint32(b[offset : offset+4])
+	offset += 4
+	rr.dataLength = binary.BigEndian.Uint16(b[offset : offset+2])
+	offset += 2
+	if rr.recordType == 0x01 {
+		ip, _ := netip.AddrFromSlice(b[offset : offset+int(rr.dataLength)])
+		rr.data = ip.String()
+	}
+	offset += int(rr.dataLength)
+	return rr, offset
 }
 
 // ParseResponse parses the response from the name server
 func ParseResponse(response []byte, req Message) (m Message) {
-	m.Header = newHeader(response)
-	q, offset := newQuestion(response[12:], len(req.Question.name))
-	m.Question = q
+	offset := 0
+	m.Header = parseHeader(response[offset:12]) // 12 bytes for the header
+	offset += 12
+	m.Question = req.Question
+	offset += len(req.Question.name)/2 + 4 // 4 bytes for the record type and class
 	for i := 0; i < int(m.Header.answerCount); i++ {
-		rr, nextOffset := newResourceRecord(response, m.Question.name, offset)
-		m.Answer = append(m.Answer, rr)
+		rr, nextOffset := parseResourceRecord(response, req.Question.name, offset)
 		offset = nextOffset
+		m.Answer = append(m.Answer, rr)
+	}
+	for i := 0; i < int(m.Header.authorityCount); i++ {
+		rr, nextOffset := parseResourceRecord(response, req.Question.name, offset)
+		offset = nextOffset
+		m.Authority = append(m.Authority, rr)
+	}
+	for i := 0; i < int(m.Header.additionalCount); i++ {
+		rr, newOffset := parseResourceRecord(response, req.Question.name, offset)
+		offset = newOffset
+		m.Additional = append(m.Additional, rr)
 	}
 	return m
 }
 
+// IsAResponse checks if the message is a response
 func (m Message) IsAResponse() bool {
 	return m.Header.flags&0x8000 == 0x8000
+}
+
+// String returns the string representation of the message
+func (rr resourceRecord) String() string {
+	return fmt.Sprintf("Name: %s\n Type: %d\n Class: %d\n TTL: %d\n Address: %s", decodeURL(rr.name), rr.recordType, rr.class, int(rr.ttl), rr.data)
 }
