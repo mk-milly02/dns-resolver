@@ -3,13 +3,12 @@ package resolver
 import (
 	"encoding/hex"
 	"fmt"
-	"strings"
 )
 
 // Message represents a DNS message
 type Message struct {
 	Header     Header
-	Question   Question
+	Question   []Question
 	Answer     []ResourceRecord
 	Authority  []ResourceRecord
 	Additional []ResourceRecord
@@ -20,49 +19,14 @@ type Message struct {
 // and empty answer, authority, and additional sections.
 func NewMessage(name string) Message {
 	return Message{
-		Header: Header{
-			id:         0x16,
-			flags:      0x00,
-			queryCount: 0x01,
-		},
-		Question: Question{EncodeDomainName(name), 0x01, 0x01},
+		Header:   NewHeader(),
+		Question: []Question{{EncodeDomainName(name), 0x01, 0x01}},
 	}
-}
-
-// encodeDomainName encodes a domain name into the DNS format
-func EncodeDomainName(name string) string {
-	var encoded string
-	labels := strings.Split(name, ".")
-	for _, l := range labels {
-		encoded += fmt.Sprintf("%02x", len(l))
-		encoded += hex.EncodeToString([]byte(l))
-	}
-	encoded += fmt.Sprintf("%02x", 0)
-	return encoded
-}
-
-// decodeDomainName decodes a domain name from the DNS format
-func DecodeDomainName(encoded string) string {
-	var decoded string
-	encoded_bytes, _ := hex.DecodeString(encoded)
-	encoded = string(encoded_bytes)
-	for i := 0; i < len(encoded); i++ {
-		length := encoded[i]
-		if length == '0' {
-			break
-		}
-		decoded += encoded[i+1 : i+1+int(length)]
-		i += int(length)
-		if i+2 < len(encoded) {
-			decoded += "."
-		}
-	}
-	return decoded
 }
 
 // BuildQuery builds the DNS query from the message
 func (m Message) BuildQuery() string {
-	return m.Header.String() + m.Question.String()
+	return m.Header.String() + m.Question[0].String()
 }
 
 // ValidateResponse validates the response from the name server
@@ -73,4 +37,41 @@ func (m Message) ValidateResponse(response []byte) bool {
 // IsAResponse checks if the message is a response
 func (m Message) IsAResponse() bool {
 	return m.Header.flags&0x8000 == 0x8000
+}
+
+// ParseResponse parses the response from the name server
+func (m *Message) ParseResponse(response []byte) {
+	header, offset := ParseHeader(response)
+	m.Header = header
+	questions, newOffset := ParseQuestion(response, int(header.queryCount), offset)
+	m.Question = questions
+	answers, newOffset := ParseResourceRecord(response, int(header.answerCount), newOffset)
+	m.Answer = answers
+	authority, newOffset := ParseResourceRecord(response, int(header.authorityCount), newOffset)
+	m.Authority = authority
+	additional, _ := ParseResourceRecord(response, int(header.additionalCount), newOffset)
+	m.Additional = additional
+}
+
+// String returns the string representation of the message
+func (m Message) String() string {
+	var str string
+	str += "Header:\n" + m.Header.String() + "\n"
+	str += "Question:\n"
+	for _, q := range m.Question {
+		str += q.String() + "\n"
+	}
+	str += "Answer:\n"
+	for _, a := range m.Answer {
+		str += a.String() + "\n"
+	}
+	str += "Authority:\n"
+	for _, a := range m.Authority {
+		str += a.String() + "\n"
+	}
+	str += "Additional:\n"
+	for _, a := range m.Additional {
+		str += a.String() + "\n"
+	}
+	return str
 }
