@@ -4,7 +4,7 @@ import (
 	"testing"
 )
 
-func TestEncodeURL(t *testing.T) {
+func TestEncodeDomainName(t *testing.T) {
 	type args struct {
 		name string
 	}
@@ -34,14 +34,14 @@ func TestEncodeURL(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := encodeURL(tt.args.name); got != tt.want {
-				t.Errorf("EncodeURL() = %v, want %v", got, tt.want)
+			if got := EncodeDomainName(tt.args.name); got != tt.want {
+				t.Errorf("EncodeDomainName() = %v, want %v", got, tt.want)
 			}
 		})
 	}
 }
 
-func Test_decodeURL(t *testing.T) {
+func Test_DecodeDomainName(t *testing.T) {
 	type args struct {
 		encoded string
 	}
@@ -71,8 +71,8 @@ func Test_decodeURL(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			if got := decodeURL(tt.args.encoded); got != tt.want {
-				t.Errorf("decodeURL() = %v, want %v", got, tt.want)
+			if got := DecodeDomainName(tt.args.encoded); got != tt.want {
+				t.Errorf("DecodeDomainName() = %v, want %v", got, tt.want)
 			}
 		})
 	}
