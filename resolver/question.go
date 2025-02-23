@@ -14,6 +14,11 @@ type Question struct {
 	class      uint16
 }
 
+// Print returns the string representation of the question
+func (q Question) Print() string {
+	return fmt.Sprintf("\tName: %s \n\tType: %s \n\tClass: %s", q.name, GetResourceRecordType(q.recordType), GetResourceRecordClass(q.class))
+}
+
 // String returns the string representation of the question
 func (q Question) String() string {
 	return fmt.Sprintf("%s%04x%04x", q.name, q.recordType, q.class)
