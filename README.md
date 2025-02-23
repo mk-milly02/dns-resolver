@@ -2,7 +2,7 @@
 
 ## Overview
 
-The DNS Resolver is a project designed to resolve domain names to their corresponding IP addresses. 
+The DNS Resolver is a project designed to resolve domain names to their corresponding IP addresses.
 This tool can be used to perform DNS lookups and retrieve various DNS records such as A, AAAA, CNAME, MX, and more.
 
 ## Features
@@ -24,7 +24,7 @@ go run main.go -d "example.com"
 
 ## Contributing
 
-Contributions are welcome! Please fork the repository and submit a pull request with your changes. 
+Contributions are welcome! Please fork the repository and submit a pull request with your changes.
 Ensure that your code follows the project's coding standards and includes appropriate tests.
 
 ## License
