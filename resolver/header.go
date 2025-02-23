@@ -4,7 +4,6 @@ import (
 	"encoding/binary"
 	"fmt"
 	"log"
-	"math"
 	"math/rand"
 	"time"
 )
@@ -23,6 +22,12 @@ type Header struct {
 func (h Header) String() string {
 	return fmt.Sprintf("%04x%04x%04x%04x%04x%04x", h.id, h.flags,
 		h.queryCount, h.answerCount, h.authorityCount, h.additionalCount)
+}
+
+// Print returns the string representation of the header
+func (h Header) Print() string {
+	return fmt.Sprintf("\tID: %04x\n\tFlags: %04x\n\tQuestions: %d\n\tAnswer RRs: %d\n\tAuthority RRs: %d\n\tAdditional RRs: %d",
+		h.id, h.flags, h.queryCount, int(h.answerCount), int(h.authorityCount), int(h.additionalCount))
 }
 
 // ParseHeader creates a new header from the byte slice
@@ -44,8 +49,7 @@ func ParseHeader(b []byte) (Header, int) {
 // generate_transaction_id generates a random transaction ID
 func generate_transaction_id() uint16 {
 	r := rand.New(rand.NewSource(time.Now().UnixNano()))
-	num := uint16(r.Intn(math.MaxUint16))
-	return num
+	return uint16(r.Intn(16))
 }
 
 // NewHeader creates a new DNS header with default values
