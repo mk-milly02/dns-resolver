@@ -67,12 +67,12 @@ func GetResourceRecordClass(class uint16) string {
 
 // ResourceRecord represents a DNS resource record
 type ResourceRecord struct {
-	name       string
-	recordType uint16
-	class      uint16
-	ttl        uint32
-	dataLength uint16
-	data       string
+	Name       string
+	RecordType uint16
+	Class      uint16
+	TTL        uint32
+	DataLength uint16
+	Data       string
 }
 
 // ParseResourceRecord creates a new resource record from the byte slice
@@ -109,10 +109,10 @@ func ParseResourceRecord(b []byte, count, offset int) (rr []ResourceRecord, newO
 
 // Print returns the string representation of the message
 func (rr ResourceRecord) Print() string {
-	if rr.recordType == 0x01 {
+	if rr.RecordType == 0x01 {
 		return fmt.Sprintf("\tName: %s \n\tType: %s \n\tClass: %s \n\tTTL: %d \n\tLength: %d \n\tAddress: %s\n",
-			rr.name, GetResourceRecordType(rr.recordType), GetResourceRecordClass(rr.class), int(rr.ttl), int(rr.dataLength), rr.data)
+			rr.Name, GetResourceRecordType(rr.RecordType), GetResourceRecordClass(rr.Class), int(rr.TTL), int(rr.DataLength), rr.Data)
 	}
 	return fmt.Sprintf("\tName: %s \n\tType: %s \n\tClass: %s \n\tTTL: %d \n\tLength: %d \n\tName server: %s\n",
-		rr.name, GetResourceRecordType(rr.recordType), GetResourceRecordClass(rr.class), int(rr.ttl), int(rr.dataLength), rr.data)
+		rr.Name, GetResourceRecordType(rr.RecordType), GetResourceRecordClass(rr.Class), int(rr.TTL), int(rr.DataLength), rr.Data)
 }
