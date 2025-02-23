@@ -42,6 +42,7 @@ func (m Message) IsAResponse() bool {
 // ParseResponse parses the response from the name server
 func (m *Message) ParseResponse(response []byte) {
 	header, offset := ParseHeader(response)
+	m.Header = header
 	questions, newOffset := ParseQuestion(response, int(header.queryCount), offset)
 	m.Question = questions
 	answers, newOffset := ParseResourceRecord(response, int(header.answerCount), newOffset)

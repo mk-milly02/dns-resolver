@@ -4,6 +4,7 @@ import (
 	"encoding/binary"
 	"encoding/hex"
 	"fmt"
+	"net/netip"
 )
 
 const (
@@ -85,9 +86,17 @@ func ParseResourceRecord(b []byte, count, offset int) (rr []ResourceRecord, newO
 		var data string
 		switch recordType {
 		case 0x01:
-			data = fmt.Sprintf("%d.%d.%d.%d", b[nOffset+10], b[nOffset+11], b[nOffset+12], b[nOffset+13])
-		case 0x05:
+			ip, ok := netip.AddrFromSlice(b[nOffset+10 : nOffset+14])
+			if ok {
+				data = ip.String()
+			}
+		case 0x02, 0x05:
 			data, _ = DecodeDomainName(b, nOffset+10)
+		case 0x1c:
+			ip, ok := netip.AddrFromSlice(b[nOffset+10 : nOffset+26])
+			if ok {
+				data = ip.String()
+			}
 		default:
 			data = hex.EncodeToString(b[nOffset+10 : nOffset+10+int(dataLength)])
 		}
