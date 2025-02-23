@@ -53,16 +53,28 @@ func EncodeDomainName(name string) string {
 // DecodeDomainName parses a domain name from the byte slice
 func DecodeDomainName(b []byte, offset int) (string, int) {
 	var name string
+	isCompressed := false
+	cOffset := offset
 	for {
-		length := int(b[offset])
+		if b[cOffset] == 0xc0 {
+			if !isCompressed {
+				isCompressed = true
+				offset += 2
+			}
+			cOffset = int(b[cOffset+1])
+		}
+		length := int(b[cOffset])
+		if !isCompressed {
+			offset += length + 1
+		}
 		if length == 0 {
 			break
 		}
-		name += string(b[offset+1 : offset+1+length])
-		offset += length + 1
-		if b[offset] != 0 {
+		name += string(b[cOffset+1 : cOffset+1+length])
+		cOffset += length + 1
+		if b[cOffset] != 0 {
 			name += "."
 		}
 	}
-	return name, offset + 1
+	return name, offset
 }

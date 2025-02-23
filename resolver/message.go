@@ -42,7 +42,6 @@ func (m Message) IsAResponse() bool {
 // ParseResponse parses the response from the name server
 func (m *Message) ParseResponse(response []byte) {
 	header, offset := ParseHeader(response)
-	m.Header = header
 	questions, newOffset := ParseQuestion(response, int(header.queryCount), offset)
 	m.Question = questions
 	answers, newOffset := ParseResourceRecord(response, int(header.answerCount), newOffset)
@@ -53,25 +52,25 @@ func (m *Message) ParseResponse(response []byte) {
 	m.Additional = additional
 }
 
-// String returns the string representation of the message
-func (m Message) String() string {
+// Print returns the string representation of the message
+func (m Message) Print() string {
 	var str string
-	str += "Header:\n" + m.Header.String() + "\n"
-	str += "Question:\n"
+	str += "Header:\n" + m.Header.Print() + "\n"
+	str += "Query:\n"
 	for _, q := range m.Question {
-		str += q.String() + "\n"
+		str += q.Print() + "\n"
 	}
 	str += "Answer:\n"
 	for _, a := range m.Answer {
-		str += a.String() + "\n"
+		str += a.Print() + "\n"
 	}
 	str += "Authority:\n"
 	for _, a := range m.Authority {
-		str += a.String() + "\n"
+		str += a.Print() + "\n"
 	}
 	str += "Additional:\n"
 	for _, a := range m.Additional {
-		str += a.String() + "\n"
+		str += a.Print() + "\n"
 	}
 	return str
 }

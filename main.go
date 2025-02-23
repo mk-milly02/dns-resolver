@@ -2,35 +2,37 @@ package main
 
 import (
 	"dns-resolver/resolver"
+	"encoding/hex"
 	"flag"
 	"fmt"
 	"log"
 )
 
 func main() {
-	domain := flag.String("domain", "example.com", "domain to resolve")
+	domain := flag.String("d", "example.com", "domain to resolve")
 	flag.Parse()
 
 	// Create a new message
-	m := resolver.NewMessage(*domain)
-	query := m.BuildQuery()
-	fmt.Println("Query:", query)
+	mRequest := resolver.NewMessage(*domain)
+	query := mRequest.BuildQuery()
 
 	// Send the query to the name server
-	response, err := resolver.SendRequest([]byte(query))
+	hex_query, err := hex.DecodeString(query)
 	if err != nil {
 		log.Fatal(err)
 	}
-	fmt.Println("Response:", response)
+	response, err := resolver.SendRequest(hex_query)
+	if err != nil {
+		log.Fatal(err)
+	}
 
 	// Check if the response is valid
-	if !m.ValidateResponse(response) {
+	if !mRequest.ValidateResponse(response) {
 		log.Fatal("Invalid response")
 	}
-	fmt.Println("Response is valid")
 
 	// Parse the response
-	var rMessage resolver.Message
-	rMessage.ParseResponse(response)
-	fmt.Println(rMessage.String())
+	var mResponse resolver.Message
+	mResponse.ParseResponse(response)
+	fmt.Println(mResponse.Print())
 }
